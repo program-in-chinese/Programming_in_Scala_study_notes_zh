@@ -1,0 +1,2 @@
+# Programming_in_Scala_study_notes_zh
+Programming in Scala第三版学习笔记, 并将所有示例代码中文化

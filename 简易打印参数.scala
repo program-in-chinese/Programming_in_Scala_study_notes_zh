@@ -1,0 +1,1 @@
+args.foreach((参数: String) => println(参数))

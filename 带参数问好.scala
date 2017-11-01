@@ -1,0 +1,1 @@
+println("你好, " + args(0))

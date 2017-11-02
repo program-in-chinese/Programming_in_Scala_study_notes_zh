@@ -176,3 +176,20 @@ args.foreach(参数 => println(参数))
 ```
   args.foreach(println)
 ```
+for循环的例子:
+```
+for(参数 <- args)
+  println(参数)
+```
+其中`参数`省略了val, 也就是说它不可以被重新赋值
+
+### 第三章 上路
+
+此章之后, 应该可以用Scala写有用的脚本了. 不妨动手尝试.
+
+#### 第七步. 带类型的数组
+
+下面初始化一个BigInteger, 并初始化为`12345`
+```
+var 大数 = new java.math.BigInteger("12345")
+```

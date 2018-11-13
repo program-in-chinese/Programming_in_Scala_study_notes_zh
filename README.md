@@ -1,6 +1,6 @@
 # Programming in Scala第三版学习笔记, 示例代码中文命名
 
-前言: 由于已有中文版, 这个笔记并不拘泥于翻译原文, 而是选摘和提炼出个人认为的重点, 并顺便将所有示例改成中文命名(同样不拘泥于原本的词意, 而是融入中文特色), 希望为后人学习降低一点门槛.
+前言: 由于已有中文版, 这个笔记并不拘泥于翻译原文, 而是选摘和提炼出个人认为的重点, 并顺便将所有示例改成中文命名(同样不拘泥于原本的词意, 而是融入中文特色), 希望方便自己复习或他人入门.
 本文代码在Scala 2.12.4, Java 1.8.0_45下测试通过.
 
 ### 第一章 普适的语言
@@ -11,7 +11,7 @@ Scala这个名字来源于"scalable语言", 当初的设想是能够用在小到
 
 #### 1.1 
 
-```
+```scala
 var 首都 = Map("中国" -> "北京", "俄罗斯" -> "莫斯科")
 首都 += ("德国" -> "柏林")
 println(首都("俄罗斯"))
@@ -150,7 +150,7 @@ $ scala 带参数问好.scala 大黄
 
 #### 第五步. while循环; if条件判断
 
-```
+```scala
 var 索引 = 0
 while (索引 < args.length) {
   if (索引 != 0) {
@@ -183,6 +183,8 @@ for(参数 <- args)
 ```
 其中`参数`省略了val, 也就是说它不可以被重新赋值
 
+(第二章完)
+
 ### 第三章 上路
 
 此章之后, 应该可以用Scala写有用的脚本了. 不妨动手尝试.
@@ -194,7 +196,7 @@ for(参数 <- args)
 var 大数 = new java.math.BigInteger("12345")
 ```
 带类型的数组示例:
-```
+```scala
 val 问候字段 = new Array[String](3)
 
 问候字段(0) = "你好"
@@ -205,7 +207,7 @@ for (索引 <- 0 to 2)
   print(问候字段(索引))
 ```
 上面其实是下面的简写版:
-```
+```scala
   val 问候字段 = new Array[String](3)
   
   问候字段.update(0, "你好")
@@ -230,11 +232,11 @@ var 数字 = Array.apply("零", "一", "二")
 Scala中的列表scala.List是不可变的. 而java.util.List是可变的.
 
 下面是创建列表:
-```
+```scala
 val 一二三 = List(1, 2, 3)
 ```
 因为它的内容是不可变的, 因此很多看似会改变列表的方法, 实际上是新建了一个列表. 比如`:::`是合并列表:
-```
+```scala
   val 一二 = List(1, 2)
   val 三四 = List(3, 4)
   val 一二三四 = 一二 ::: 三四
@@ -247,7 +249,7 @@ List(1, 2) 和 List(3, 4) 没有改变.
 所以, List(1, 2, 3, 4) 是新列表.
 ```
 也许最常用的列表操作符会是`::`, 就是`加塞`, 可以把一个元素加到一个列表的头上, 返回一个新列表.
-```
+```scala
 val 二三 = List(2, 3)
 val 一二三 = 1 :: 二三
 ```
@@ -267,12 +269,163 @@ val 一二三 = 1 :: 2 :: 3 :: Nil
 #### 第九步 使用元组
 
 元组(Tuple)比列表更加灵活, 因为它允许存放多种类型的数据. 比如:
-```
+```scala
 val 对 = (99, "久久")
 println(对._1)
 println(对._2)
 ```
 它会打印第一个和第二个元素. 元组的类型取决于长度和元素类型, 比如"对"的类型是Tuple2(Int, String). 不像列表注意元组的索引开始于1, 因为其他语言(Haskell/ML)中的元组也是如此).
 
-#### 第十步 使用集合和映射
+#### 第十步 使用集合(Set)和映射(Map)
+(这里开始仅包含例程与极简说明, 如有空再补详细说明)
+不可变集合
+```scala
+var 客机厂商 = Set("空客", "波音")
+客机厂商 += "商飞"
+println(客机厂商.contains("大疆"))
+```
+可变集合
+```scala
+import scala.collection.mutable
 
+val 电影 = mutable.Set("舌尖一", "舌尖二")
+电影 += "舌尖三"
+println(电影)
+```
+如需指定使用HashSet, 就`import scala.collection.immutable.HashSet`
+
+可变映射
+```scala
+import scala.collection.mutable
+
+val 寻宝指南 = mutable.Map[Int, String]()
+寻宝指南 += (1 -> "上荒岛")
+寻宝指南 += (2 -> "在地上找个那啥")
+寻宝指南 += (3 -> "开挖")
+println(寻宝指南(2))
+```
+
+不变映射
+```scala
+val 中文数字 = Map(1 -> "一", 2 -> "二", 3 -> "三", 4 -> "四", 5 -> "五")
+println(中文数字(4))
+```
+
+#### 第十一步 学习函数风格
+改自第二章例子:
+```scala
+def 打印参数(参数: Array[String]): Unit = {
+  var i = 0
+  while (i < 参数.length) {
+    println(参数(i))
+    i += 1
+  }
+}
+```
+如下可以省去var
+```scala
+def 打印参数(参数: Array[String]): Unit = {
+  for (某参数 <- 参数)
+    println(某参数)
+}
+```
+或更简单:
+```scala
+def 打印参数(参数: Array[String]): Unit = {
+  参数.foreach(println)
+}
+```
+无副作用的函数(不打印输出, 也没有var):
+```scala
+def 格式化参数(参数: Array[String]) = 参数.mkString("\n")
+```
+
+用`assert`测试:
+```scala
+val 结果 = 格式化参数(Array("一", "二", "三"))
+assert(结果 == "一\n二\n三")
+```
+更多测试相关见14章
+
+#### 第十二步 从文件读行
+```scala
+import scala.io.Source
+
+// 下面"args"如改写为"参数"后报错: error: not found: value 参数
+if (args.length > 0) {
+  for (行 <- Source.fromFile(args(0)).getLines())
+    println(行.length + " " + 行)
+}
+else
+  Console.err.println("请输入文件名")
+```
+运行`scala 统计字符1.scala  统计字符1.scala`后输出:
+```
+22 import scala.io.Source
+0
+50 // 下面"args"如改写为"参数"后报错: error: not found: value 参数
+22 if (args.length > 0) {
+48   for (行 <- Source.fromFile(args(0)).getLines())
+31     println(行.length + " " + 行)
+1 }
+4 else
+31   Console.err.println("请输入文件名")
+```
+如想输出更漂亮, 下面是最终版:
+```scala
+import scala.io.Source
+
+def 字符数宽度(文本: String) = 文本.length.toString.length
+
+if (args.length > 0) {
+  val 行 = Source.fromFile(args(0)).getLines().toList
+  val 最长行 = 行.reduceLeft(
+    (行1, 行2) => if (行1.length > 行2.length) 行1 else 行2
+  )
+  val 最大宽度 = 字符数宽度(最长行)
+  for (某行 <- 行) {
+    val 空格数 = 最大宽度 - 字符数宽度(某行)
+    val 缩进 = " " * 空格数
+    println(缩进 + 某行.length + " | " + 某行)
+  }
+}
+else
+  Console.err.println("请输入文件名")
+```
+运行`scala 统计字符2.scala  统计字符2.scala`输出如下:
+```
+22 | import scala.io.Source
+ 0 |
+49 | def 字符数宽度(文本: String) = 文本.length.toString.length
+ 0 |
+22 | if (args.length > 0) {
+52 |   val 行 = Source.fromFile(args(0)).getLines().toList
+25 |   val 最长行 = 行.reduceLeft(
+53 |     (行1, 行2) => if (行1.length > 行2.length) 行1 else 行2
+ 3 |   )
+23 |   val 最大宽度 = 字符数宽度(最长行)
+17 |   for (某行 <- 行) {
+30 |     val 空格数 = 最大宽度 - 字符数宽度(某行)
+22 |     val 缩进 = " " * 空格数
+40 |     println(缩进 + 某行.length + " | " + 某行)
+ 3 |   }
+ 1 | }
+ 4 | else
+31 |   Console.err.println("请输入文件名")
+```
+
+(第三章完)
+
+### 发现的中文相关问题
+命令行交互环境中, 错误信息对中文字符的定位不准. 这很干扰排错. 比较如下两个同样出错信息:
+```
+scala> println(["2"])
+<console>:1: error: illegal start of simple expression
+       println(["2"])
+               ^
+
+scala> 打印参数(["2"])
+<console>:1: error: illegal start of simple expression
+       打印参数(["2"])
+            ^
+```

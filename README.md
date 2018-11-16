@@ -872,6 +872,147 @@ res7: 有理数 = 11/7
 ```
 
 #### 6.9 定义运算符
+定义了+和*:
+```scala
+class 有理数(分子: Int, 分母: Int) {
+  require(分母 != 0)
+  private val 公约数 = 最大公约数(分子.abs, 分母.abs)
+
+  val 分子值: Int = 分子 / 公约数
+  val 分母值: Int = 分母 / 公约数
+
+  def this(数: Int) = this(数, 1)
+
+  def + (数: 有理数): 有理数 =
+    new 有理数(
+      分子值 * 数.分母值 + 数.分子值 * 分母值,
+      分母值 * 数.分母值
+    )
+
+  def * (数: 有理数): 有理数 =
+    new 有理数(分子值 * 数.分子值, 分母值 * 数.分母值)
+
+  override def toString = 分子值 + "/" + 分母值
+
+  private def 最大公约数(甲: Int, 乙: Int): Int =
+    if (乙 == 0) 甲 else 最大公约数(乙, 甲 % 乙)
+}
+```
+运行. 运算符优先级见5.9:
+```
+val x = new 有理数(1, 2)
+val y = new 有理数(2, 3)
+x + y
+x + x * y
+(x + x) * y
+x + (x * y)
+```
+
+#### 6.10 Scala标识符
+
+之前看到了两种标识符: 数字字母混合, 运算符
+
+与Java不同的是, 常量在Java中是大写加下划线分隔, 如`X_OFFSET`; Scala只要求驼峰命名而且开头大写, 如`XOffset`
+
+运算符标识符也有不同, x<-y在Java中被识别为`x < - y`, 但Scala中将`<-`解析为单个标识符
+
+混合标识符, 如`unary_+`定义一元+运算符, `myvar_=`定义赋值运算符 (第18章更多)
+
+字面量标识符如`x`, `yield`, `<clinit>`. 一个用法是访问Java的`Thread`类, 由于`yield`是Scala保留字, 不能写`Thread.yield()`, 但可以用反引号: Thread.\`yield\`()
+
+#### 6.11 方法重载
+支持有理数+整数, 顺便加上減和除
+```scala
+class 有理数(分子: Int, 分母: Int) {
+  require(分母 != 0)
+  private val 公约数 = 最大公约数(分子.abs, 分母.abs)
+
+  val 分子值: Int = 分子 / 公约数
+  val 分母值: Int = 分母 / 公约数
+
+  def this(数: Int) = this(数, 1)
+
+  def + (数: 有理数): 有理数 =
+    new 有理数(
+      分子值 * 数.分母值 + 数.分子值 * 分母值,
+      分母值 * 数.分母值
+    )
+
+  def + (数: Int): 有理数 =
+    new 有理数(分子值 + 数 * 分母值, 分母值)
+
+  def - (数: 有理数): 有理数 =
+    new 有理数(
+      分子值 * 数.分母值 - 数.分子值 * 分母值,
+      分母值 * 数.分母值
+    )
+
+  def - (数: Int): 有理数 =
+    new 有理数(分子值 - 数 * 分母值, 分母值)
+
+  def * (数: 有理数): 有理数 =
+    new 有理数(分子值 * 数.分子值, 分母值 * 数.分母值)
+
+  def * (数: Int): 有理数 =
+    new 有理数(分子值 * 数, 分母值)
+
+  def / (数: 有理数): 有理数 =
+    new 有理数(分子值 * 数.分母值, 分母值 * 数.分子值)
+
+  def / (数: Int): 有理数 =
+    new 有理数(分子值, 分母值 * 数)
+
+  override def toString = 分子值 + "/" + 分母值
+  
+  private def 最大公约数(甲: Int, 乙: Int): Int =
+    if (乙 == 0) 甲 else 最大公约数(乙, 甲 % 乙)
+}
+```
+运行:
+```
+scala> val x = new 有理数(2, 3)
+x: 有理数 = 2/3
+
+scala> x * x
+res4: 有理数 = 4/9
+
+scala> x * 2
+res5: 有理数 = 4/3
+```
+
+#### 6.12 隐式转换
+现在仍不支持`2*x`:
+```
+scala> 2 * x
+<console>:13: error: overloaded method value * with alternatives:
+  (x: Double)Double <and>
+  (x: Float)Float <and>
+  (x: Long)Long <and>
+  (x: Int)Int <and>
+  (x: Char)Int <and>
+  (x: Short)Int <and>
+  (x: Byte)Int
+ cannot be applied to (有理数)
+       2 * x
+```
+运行. 注意如果在类内声明, 就只在类内有效, 而在交互环境内就无效, 因此必须在交互环境声明:
+```scala
+implicit def 整数到有理数(数: Int) = new 有理数(数)
+```
+之后再运行成功. 更多隐式转换见21章
+```
+scala> val r = new 有理数(2, 3)
+r: 有理数 = 2/3
+
+scala> 2 * r
+res0: 有理数 = 4/3
+```
+
+#### 6.13 注意点
+
+运算符方法和隐式转换过头会导致代码可读性下降, 比如当运算符过于复杂或者晦涩, 而隐式转换的问题是它可能不写在源代码中. 因此需谨慎使用.
+
+(第六章完)
 
 ### 发现的中文相关问题
 命令行交互环境中, 错误信息对中文字符的定位不准. 这很干扰排错. 比较如下两个同样出错信息:

@@ -751,7 +751,7 @@ List(1,2,3) == List(1,2,3)
 ```
 所有基本类型都有对应封装类, 提供额外功能. 除String是`scala.collection.immutable.StringOps`, 其他类型都对应`scala.runtime.Rich_`, 如Int对应`scala.runtime.RichInt`
 
-### 第六章
+### 第六章 功能对象
 
 以一个有理数类为例演示Scala面向对象编程的各个方面
 #### 6.1 有理数定义

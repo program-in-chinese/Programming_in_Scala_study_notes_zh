@@ -751,8 +751,127 @@ List(1,2,3) == List(1,2,3)
 ```
 所有基本类型都有对应封装类, 提供额外功能. 除String是`scala.collection.immutable.StringOps`, 其他类型都对应`scala.runtime.Rich_`, 如Int对应`scala.runtime.RichInt`
 
-### 第 章
-####
+### 第六章
+
+以一个有理数类为例演示Scala面向对象编程的各个方面
+#### 6.1 有理数定义
+设想中的功能:
+```scala
+val 一半 = new 有理数(1, 2) // 结果为1/2
+val 三分之二 = new 有理数(2, 3)
+(一半 / 7) + (1 - 三分之二) // 结果为有理数17/42
+```
+
+#### 6.2 构造
+```scala
+class 有理数(分子: Int, 分母: Int)
+```
+不可变对象有好处, 也有短处. 这里创建不可变对象.
+
+任何类内不为变量或者方法声明的部分都会被置于首要构建器.
+```scala
+class 有理数(分子: Int, 分母: Int) {
+  println("已创建" + 分子 + "/" + 分母)
+}
+```
+调用`new 有理数(1, 2)`会打印`已创建1/2`
+
+#### 6.3 重新实现toString方法
+
+```scala
+class 有理数(分子: Int, 分母: Int) {
+  override def toString = 分子 + "/" + 分母
+}
+```
+运行:
+```
+scala> new 有理数(1, 2)
+res1: 有理数 = 1/2
+```
+
+#### 6.4 检查先决条件
+```scala
+class 有理数(分子: Int, 分母: Int) {
+  require(分母 != 0)
+  override def toString = 分子 + "/" + 分母
+}
+```
+
+#### 6.5 加变量
+```scala
+class 有理数(分子: Int, 分母: Int) {
+  require(分母 != 0)
+  val 分子值: Int = 分子
+  val 分母值: Int = 分母
+  override def toString = 分子值 + "/" + 分母值
+  def 加(数: 有理数): 有理数 =
+    new 有理数(
+      分子值 * 数.分母值 + 数.分子值 * 分母值,
+      分母值 * 数.分母值
+    )
+}
+```
+运行:
+```
+scala> val 一半 = new 有理数(1, 2)
+一半: 有理数 = 1/2
+
+scala> val 三分之二 = new 有理数(2, 3)
+三分之二: 有理数 = 2/3
+
+scala> 一半 加 三分之二
+res3: 有理数 = 7/6
+```
+也可取对象内变量值:
+```
+scala> 一半.分子值
+res4: Int = 1
+
+scala> 一半.分母值
+res5: Int = 2
+```
+
+#### 6.6 自引用
+```scala
+def 小于(数: 有理数) =
+  this.分子值 * 数.分母 < 数.分子 * this.分母
+
+def 最大(数: 有理数) =
+  if (this.小于(数)) 数 else this
+```
+
+#### 6.7 辅助构建器
+所有辅助构建器的第一句必须调用另一个构建器, 因此必须是`this(...)`格式
+```scala
+def this(数: Int) = this(数, 1)
+```
+
+#### 6.8 私有变量和方法
+在有理数类中, 新添如下:
+```scala
+class 有理数(分子: Int, 分母: Int) {
+  require(分母 != 0)
+  private val 公约数 = 最大公约数(分子.abs, 分母.abs)
+
+  val 分子值: Int = 分子 / 公约数
+  val 分母值: Int = 分母 / 公约数
+  override def toString = 分子值 + "/" + 分母值
+  def 加(数: 有理数): 有理数 =
+    new 有理数(
+      分子值 * 数.分母值 + 数.分子值 * 分母值,
+      分母值 * 数.分母值
+    )
+  private def 最大公约数(甲: Int, 乙: Int): Int =
+    if (乙 == 0) 甲 else 最大公约数(乙, 甲 % 乙)
+}
+```
+运行:
+```scala
+scala> new 有理数(66, 42)
+res7: 有理数 = 11/7
+```
+
+#### 6.9 定义运算符
 
 ### 发现的中文相关问题
 命令行交互环境中, 错误信息对中文字符的定位不准. 这很干扰排错. 比较如下两个同样出错信息:

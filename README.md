@@ -373,7 +373,7 @@ import scala.io.Source
 
 // 下面"args"如改写为"参数"后报错: error: not found: value 参数
 if (args.length > 0) {
-  for (行 <- Source.fromFile(args(0)).getLines())
+  for (行 <- Source.fromFile(args(0)).getLines
     println(行.length + " " + 行)
 }
 else
@@ -385,7 +385,7 @@ else
 0
 50 // 下面"args"如改写为"参数"后报错: error: not found: value 参数
 22 if (args.length > 0) {
-48   for (行 <- Source.fromFile(args(0)).getLines())
+48   for (行 <- Source.fromFile(args(0)).getLines)
 31     println(行.length + " " + 行)
 1 }
 4 else
@@ -398,7 +398,7 @@ import scala.io.Source
 def 字符数宽度(文本: String) = 文本.length.toString.length
 
 if (args.length > 0) {
-  val 行 = Source.fromFile(args(0)).getLines().toList
+  val 行 = Source.fromFile(args(0)).getLines.toList
   val 最长行 = 行.reduceLeft(
     (行1, 行2) => if (行1.length > 行2.length) 行1 else 行2
   )
@@ -419,7 +419,7 @@ else
 49 | def 字符数宽度(文本: String) = 文本.length.toString.length
  0 |
 22 | if (args.length > 0) {
-52 |   val 行 = Source.fromFile(args(0)).getLines().toList
+52 |   val 行 = Source.fromFile(args(0)).getLines.toList
 25 |   val 最长行 = 行.reduceLeft(
 53 |     (行1, 行2) => if (行1.length > 行2.length) 行1 else 行2
  3 |   )
@@ -1158,7 +1158,7 @@ for (
 下面等价于两层for遍历
 ```scala
 def 从文件读行(文件: java.io.File) =
-  scala.io.Source.fromFile(文件).getLines().toList
+  scala.io.Source.fromFile(文件).getLines.toList
 
 def 匹配文本(模式: String) =
   for (
@@ -1177,7 +1177,7 @@ def 匹配文本(模式: String) =
 为何用{}? -- 因为有额外的赋值语句
 ```scala
 def 从文件读行(文件: java.io.File) =
-  scala.io.Source.fromFile(文件).getLines().toList
+  scala.io.Source.fromFile(文件).getLines.toList
 
 def 匹配文本(模式: String) =
   for {

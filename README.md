@@ -4,6 +4,8 @@
 
 **本文代码在Scala 2.12.4, Java 1.8.0_45下测试通过**
 
+## 目录
+
 [第一章 普适的语言](#%E7%AC%AC%E4%B8%80%E7%AB%A0-%E6%99%AE%E9%80%82%E7%9A%84%E8%AF%AD%E8%A8%80)
 
 [第二章 蹒跚学步](#%E7%AC%AC%E4%BA%8C%E7%AB%A0-%E8%B9%92%E8%B7%9A%E5%AD%A6%E6%AD%A5)
@@ -295,12 +297,13 @@ println(对._2)
 #### 第十步 使用集合(Set)和映射(Map)
 **(这里开始仅包含例程与极简说明, 如有空再补详细说明)**
 
-不可变集合
+不可变集合. 如果将var改为val, 会报不能赋值的错, 因为这里的`+=`等价于`客机厂商 = 客机厂商 + "商飞"`, 而默认的`scala.collection.immutable.Set`不能被再次赋值
 ```scala
 var 客机厂商 = Set("空客", "波音")
 客机厂商 += "商飞"
 println(客机厂商.contains("大疆"))
 ```
+
 可变集合
 ```scala
 import scala.collection.mutable

@@ -1660,10 +1660,204 @@ You can make this conversion explicit by writing `求和 _` or `求和(_,_,_)` i
 ```
 
 #### 8.7 闭包
-下面
+下面的`数`是绑定变量, 而`增量`由于没有定义是自由变量:
 ```
+scala> (数: Int) => 数 + 增量
+<console>:12: error: not found: value 增量
+       (数: Int) => 数 + 增量
+                       ^
+```
+但只要有`增量`定义, 同样函数定义即合法:
+```
+scala> var 增量 = 1
+增量: Int = 1
+
+scala> val 累加 = (数: Int) => 数 + 增量
+累加: Int => Int = $$Lambda$1146/681292833@8e164f2
+
+scala> 累加(10)
+res20: Int = 11
+```
+在运行时通过"捕捉"自由变量的绑定值来"闭合"函数就叫"闭包". 如果`增量`在闭包形成后改变, 闭包也随之改变:
+```
+scala> 增量 = 9999
+增量: Int = 9999
+
+scala> 累加(10)
+res21: Int = 10009
+```
+同样如果变量在闭包中有修改, 外部也可见此修改:
+```
+scala> var 和 = 0
+和: Int = 0
+
+scala> 几个数.foreach(和 += _)
+
+scala> 和
+res24: Int = -11
+```
+在运行时, 闭包牵涉的变量值可能改变, 关键在于该闭包创建的时刻变量值如何:
+```
+scala> val 累加器1 = 创建累加器(1)
+累加器1: Int => Int = $$Lambda$1168/1847678962@36f59005
+
+scala> val 累加器9999 = 创建累加器(9999)
+累加器9999: Int => Int = $$Lambda$1168/1847678962@4a83d668
+
+scala> 累加器1(10)
+res25: Int = 11
+
+scala> 累加器9999(10)
+res26: Int = 10009
 ```
 
+#### 8.8 特殊的函数调用方式
+
+**重复参数**
+```
+scala> def 回音(参数: String*) =
+     |   for (某参数 <- 参数) println(某参数)
+回音: (参数: String*)Unit
+
+scala> 回音()
+
+scala> 回音("一")
+一
+
+scala> 回音("吃了", "吗!")
+吃了
+吗!
+```
+如果传入数组, 编译报错:
+```
+scala> val 数组 = Array("咋", "样", "啊?") 
+数组: Array[String] = Array(咋, 样, 啊?)
+
+scala> 回音(数组)
+<console>:14: error: type mismatch;
+ found   : Array[String]
+ required: String
+       回音(数组)
+          ^
+```
+可以通过`: _*`达成:
+```
+scala> 回音(数组: _*)
+咋
+样
+啊?
+```
+
+**有名参数**
+调用时, 参数可以用与函数定义时的顺序不同:
+```
+scala> def 速度(距离: Float, 时间: Float): Float =
+     |   距离 / 时间
+速度: (距离: Float, 时间: Float)Float
+
+scala> 速度(100, 10)
+res32: Float = 10.0
+
+scala> 速度(时间 = 10, 距离 = 100)
+res33: Float = 10.0
+```
+
+**默认参数值**
+
+调用时可以选择省去指定值
+```
+scala> def 打印时间(输出: java.io.PrintStream = Console.out) =
+     |   输出.println("时间 = " + System.currentTimeMillis())
+打印时间: (输出: java.io.PrintStream)Unit
+
+scala> def 打印时间2(输出: java.io.PrintStream = Console.out,
+     |               被除数: Int = 1) =
+     |   输出.println("时间 = " + System.currentTimeMillis()/被除数)
+打印时间2: (输出: java.io.PrintStream, 被除数: Int)Unit
+
+scala> 打印时间2(输出 = Console.err)
+时间 = 1543303507916
+
+scala> 打印时间2(被除数 = 1000)
+时间 = 1543303528
+```
+
+#### 8.9 尾递归
+7.2 中, 演示了通过递归将循环和var转变为函数式+val. 下面是递归例子(**不完整, 需另外定义`已够准`和`改进`**):
+```scala
+def 估摸(猜测值: Double): Double =
+  if (已够准(猜测值)) 猜测值
+  else 估摸(改进(猜测值))
+```
+循环版本:
+```scala
+def 估摸循环(最初猜测: Double): Double = {
+  var 猜测值 = 最初猜测
+  while (!已够准(猜测值))
+    猜测值 = 改进(猜测值)
+  猜测值
+}
+```
+运行时两个版本几乎一样快, 递归版本中`估摸`是最后调用的函数, 即"尾递归"
+
+**跟踪尾递归函数**
+```scala
+def 炸(数: Int): Int =
+  if (数 == 0) throw new Exception("爆!") else 炸(数 - 1) + 1
+```
+此函数非尾递归, 由于在递归函数调用后有+操作, 运行时会爆:
+```
+scala> 炸(3)
+java.lang.Exception: 爆!
+  at .炸(<console>:12)
+  at .炸(<console>:12)
+  at .炸(<console>:12)
+  at .炸(<console>:12)
+  ... 29 elided
+```
+如果改为尾递归:
+```scala
+def 爆(数: Int): Int =
+  if (数 == 0) throw new Exception("爆!") else 爆(数 - 1)
+```
+调用时可见一层堆栈:
+```
+scala> 爆(5)
+java.lang.Exception: 爆!
+  at .爆(<console>:12)
+  ... 29 elided
+```
+为确认这是尾递归优化的效果, 可在scala交互环境启动时加`-g:notailcalls`除去尾递归优化. 之后再运行可见多层:
+```
+scala> 爆(5)
+java.lang.Exception: 爆!
+  at .爆(<console>:12)
+  at .爆(<console>:12)
+  at .爆(<console>:12)
+  at .爆(<console>:12)
+  at .爆(<console>:12)
+  at .爆(<console>:12)
+  ... 29 elided
+```
+
+**尾递归的局限**
+
+如果递归函数不是直接调用, 优化不能进行:
+```scala
+def 为偶数(数: Int): Boolean =
+  if (数 == 0) true else 为奇数(数 - 1)
+def 为奇数(数: Int): Boolean =
+  if (数 == 0) false else 为偶数(数 - 1)
+```
+即使是下面也不能:
+```scala
+val 函数值 = 嵌套函数 _
+def 嵌套函数(数: Int): Unit = {
+  if (数 != 0) { println(数); 函数值(数 - 1) }
+}
+```
+
+(第八章完)
 
 ### 发现的中文相关问题
 命令行交互环境中, 错误信息对中文字符的定位不准. 这很干扰排错. 比较如下两个同样出错信息:

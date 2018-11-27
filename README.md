@@ -718,7 +718,7 @@ f"$π 大约是${math.Pi}%.8f"
 // 下面等价于 -2.0, Scala自动将'-'方法前加"unary_"并调用. 可前置的只有 + - ! ~
 2.0.unary_-
 
-// 后置运算符是无参数方法. 如果方法无副作用, 可以省去(), 否则如println()不可省略
+// 后置运算符是无参数方法. 如果方法无副作用, 可以省去(), 否则如果包含println()则不省略(??)
 "LaLaLaLa".toLowerCase
 // 或
 "LaLaLaLa" toLowerCase
@@ -1439,6 +1439,231 @@ def 乘法表() = {
 ```
 
 (第七章完)
+
+### 第八章 函数和闭包
+
+#### 8.1 方法
+
+```scala
+import scala.io.Source
+
+object 长行 {
+
+  def 处理文件(文件名: String, 宽度: Int) = {
+    val 源 = Source.fromFile(文件名)
+    for (行 <- 源.getLines())
+      处理行(文件名, 宽度, 行)
+  }
+  
+  private def 处理行(文件名: String, 宽度: Int, 行: String) = {
+    if (行.length > 宽度)
+      println(文件名 + ": " + 行.trim)
+  }
+}
+```
+为在命令行使用`长行`:
+```scala
+object 搜索长行 {
+  def main(参数: Array[String]) = {
+    val 宽度 = 参数(0).toInt
+    for (某参数 <- 参数.drop(1))
+      长行.处理文件(某参数, 宽度)
+  }
+}
+```
+先编译: `$ scalac 长行.scala`
+运行: 
+```
+$ scala 搜索长行 45 长行.scala
+长行.scala: private def 处理行(文件名: String, 宽度: Int, 行: String) = {
+```
+或者直接运行:
+```
+$ scala 长行.scala 45 长行.scala
+长行.scala: private def 处理行(文件名: String, 宽度: Int, 行: String) = {
+```
+
+#### 8.2 本地函数
+
+将`处理行`内置于`处理文件`:
+```scala
+  def 处理文件(文件名: String, 宽度: Int) = {
+    def 处理行(文件名: String, 宽度: Int, 行: String) = {
+      if (行.length > 宽度)
+        println(文件名 + ": " + 行.trim)
+    }
+    
+    val 源 = Source.fromFile(文件名)
+    for (行 <- 源.getLines())
+      处理行(文件名, 宽度, 行)
+  }
+```
+可以直接使用外围函数的参数:
+```scala
+  def 处理文件(文件名: String, 宽度: Int) = {
+    def 处理行(行: String) = {
+      if (行.length > 宽度)
+        println(文件名 + ": " + 行.trim)
+    }
+    
+    val 源 = Source.fromFile(文件名)
+    for (行 <- 源.getLines())
+      处理行(文件名, 宽度, 行)
+  }
+```
+
+#### 8.3 头等函数
+
+函数除了调用, 还可以作为值进行传递, 如:
+```
+(x: Int) => x + 1
+```
+```
+scala> var 递增 = (数: Int) => 数 + 1
+递增: Int => Int = $$Lambda$1024/713464342@ae202c6
+
+scala> 递增(10)
+res0: Int = 11
+```
+可赋值`递增`:
+```
+scala> 递增 = (数: Int) => 数 + 9999
+递增: Int => Int = $$Lambda$1081/1947060963@4e140497
+
+scala> 递增(10)
+res1: Int = 10009
+```
+如函数有多声明, {}包裹:
+```
+scala> 递增 = (数: Int) => {
+     |   println("咱")
+     |   println("在")
+     |   println("这!")
+     |   数 + 1
+     | }
+递增: Int => Int = $$Lambda$1084/1698322791@5a85b4e6
+
+scala> 递增(10)
+咱
+在
+这!
+res2: Int = 11
+```
+很多库使用函数作为参数, 如`foreach`:
+```
+scala> val 几个数 = List(-11, -10, -5, 0, 5, 10)
+几个数: List[Int] = List(-11, -10, -5, 0, 5, 10)
+
+scala> 几个数.foreach((数: Int) => println(数))
+-11
+-10
+-5
+0
+5
+10
+```
+过滤:
+```
+scala> 几个数.filter((数: Int) => 数 > 0)
+res4: List[Int] = List(5, 10)
+```
+
+#### 8.4 简写函数
+省去参数类型:
+```
+scala> 几个数.filter((数) => 数 > 0)
+res5: List[Int] = List(5, 10)
+```
+省去括号:
+```
+scala> 几个数.filter(数 => 数 > 0)
+res6: List[Int] = List(5, 10)
+```
+
+#### 8.5 占位符语法
+```
+scala> 几个数.filter(_ > 0)
+res8: List[Int] = List(5, 10)
+```
+编译器有时不能理解占位符所代表类型:
+```
+scala> val 函数 = _ + _
+<console>:11: error: missing parameter type for expanded function ((x$1: <error>, x$2) => x$1.$plus(x$2))
+       val 函数 = _ + _
+                ^
+<console>:11: error: missing parameter type for expanded function ((x$1: <error>, x$2: <error>) => x$1.$plus(x$2))
+       val 函数 = _ + _
+                    ^
+```
+可指定类型:
+```scala
+scala> val 函数 = (_: Int) + (_: Int)
+函数: (Int, Int) => Int = $$Lambda$1118/119282849@20cf3ab3
+
+scala> 函数(5, 10)
+res9: Int = 15
+```
+
+#### 8.6 部分应用函数
+```scala
+几个数.foreach(println _)
+```
+等价于:
+```scala
+几个数.foreach(数 => println(数))
+```
+_可用于应用函数于某些参数
+```
+scala> def 求和(甲: Int, 乙: Int, 丙: Int) = 甲 + 乙 + 丙
+求和: (甲: Int, 乙: Int, 丙: Int)Int
+
+scala> 求和(1, 2, 3)
+res13: Int = 6
+```
+部分应用函数就是在调用函数时不提供所有参数的表达式, 比如不提供参数:
+```
+scala> val a = 求和 _
+a: (Int, Int, Int) => Int = $$Lambda$1142/899094347@24a38ef3
+
+scala> a(1, 2, 3)
+res14: Int = 6
+```
+等价于:
+```
+scala> a.apply(1, 2, 3)
+res15: Int = 6
+```
+少提供一个参数:
+```
+scala> val b = 求和(1, _: Int, 3)
+b: Int => Int = $$Lambda$1143/1555939899@c35b83c
+
+scala> b(2)
+res16: Int = 6
+```
+如果_代替的是所有参数, 可以省略, 比如:
+```scala
+几个数.foreach(println _)
+```
+等价于
+```scala
+几个数.foreach(println)
+```
+直接赋值函数如下会导致编译错误:
+```
+scala> val a = 求和
+<console>:12: error: missing argument list for method 求和
+Unapplied methods are only converted to functions when a function type is expected.
+You can make this conversion explicit by writing `求和 _` or `求和(_,_,_)` instead of `求和`.
+       val a = 求和
+               ^
+```
+
+#### 8.7 闭包
+下面
+```
+```
+
 
 ### 发现的中文相关问题
 命令行交互环境中, 错误信息对中文字符的定位不准. 这很干扰排错. 比较如下两个同样出错信息:

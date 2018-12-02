@@ -1863,6 +1863,161 @@ def 嵌套函数(数: Int): Unit = {
 
 (第八章完)
 
+### 第九章 控制抽象
+
+通过函数值创造控制抽象
+
+#### 9.1 减少重复代码
+下面的API匹配文件名结尾, 如".scala"
+```scala
+object 文件匹配 {
+  private def 此处文件 = (new java.io.File(".")).listFiles
+  
+  def 文件名结尾(查询: String) =
+    for (文件 <- 此处文件; if 文件.getName.endsWith(查询))
+      yield 文件
+}
+```
+添加一个API匹配文件名中任何子字符串:
+```scala
+  def 文件名包括(查询: String) =
+    for (文件 <- 此处文件; if 文件.getName.contains(查询))
+      yield 文件
+```
+再添加一个按正则表达式匹配的API:
+```scala
+  def 文件名正则匹配(查询: String) =
+    for (文件 <- 此处文件; if 文件.getName.matches(查询))
+      yield 文件
+```
+虽然直觉是这样:
+```scala
+  def 文件匹配(查询: String, 匹配函数) =
+    for (文件 <- 此处文件; if 文件.getName.匹配函数(查询))
+      yield 文件
+```
+但Scala不允许用方法名作参数. 可以用下面代替:
+```scala
+  def 文件匹配(查询: String, 匹配器: (String, String) => Boolean) =
+    for (文件 <- 此处文件; if 匹配器(文件.getName, 查询))
+      yield 文件
+  
+  def 文件名结尾(查询: String) =
+    文件匹配(查询, _.endsWith(_))
+  
+  def 文件名包括(查询: String) =
+    文件匹配(查询, _.contains(_))
+  
+  def 文件名正则匹配(查询: String) =
+    文件匹配(查询, _.matches(_))
+```
+`_.endsWith(_)`等价于:
+```scala
+(文件名: String, 查询: String) => 文件名.endsWith(查询)
+```
+可省去`查询`传递:
+```scala
+  def 文件匹配(查询: String, 匹配器: (String) => Boolean) =
+    for (文件 <- 此处文件; if 匹配器(文件.getName))
+      yield 文件
+  
+  def 文件名结尾(查询: String) =
+    文件匹配(_.endsWith(查询))
+  
+  def 文件名包括(查询: String) =
+    文件匹配(_.contains(查询))
+  
+  def 文件名正则匹配(查询: String) =
+    文件匹配(_.matches(查询))
+```
+
+#### 9.2 简化客户代码
+```scala
+def 包含负数(数: List[Int]): Boolean = {
+  var 存在 = false
+  for (某数 <- 数)
+    if (某数 < 0)
+      存在 = true
+  存在
+}
+```
+运行:
+```
+scala> 包含负数(List(1, 2, 3, 4))
+res2: Boolean = false
+
+scala> 包含负数(List(1, 2, -3, 4))
+res3: Boolean = true
+```
+更简约的是调用高阶函数`exists`:
+```scala
+def 包含负数(数: List[Int]) = 数.exists(_ < 0)
+```
+如想找奇数:
+```scala
+def 包含奇数(数: List[Int]): Boolean = {
+  var 存在 = false
+  for (某数 <- 数)
+    if (某数 % 2 == 1)
+      存在 = true
+  存在
+}
+```
+类似也可用`exists`:
+```scala
+def 包含奇数(数: List[Int]) = 数.exists(_ % 2 == 1)
+```
+
+#### 9.3 Currying
+简单的加法:
+```
+scala> def 原始求和(x: Int, y: Int) = x + y
+原始求和: (x: Int, y: Int)Int
+
+scala> 原始求和(1, 2)
+res6: Int = 3
+```
+改为柯里形式:
+```
+scala> def 柯里求和(x: Int)(y: Int) = x + y
+柯里求和: (x: Int)(y: Int)Int
+
+scala> 柯里求和(1)(2)
+res7: Int = 3
+```
+刚发现交互环境的tab可以自动补全, 比如上面定义过`柯里求和`后, 下面在`柯里`后tab, 就自动补全`柯里求和`
+
+上面的形式例子拆开可由下面两步演示:
+```
+scala> def 第一(x: Int) = (y: Int) => x + y
+第一: (x: Int)Int => Int
+
+scala> val 第二 = 第一(1)
+第二: Int => Int = $$Lambda$1270/2143477943@23327c53
+
+scala> 第二(2)
+res8: Int = 3
+```
+下面可以获取实际上`柯里求和`的第二个函数:
+```
+scala> val 加一 = 柯里求和(1)_
+加一: Int => Int = $$Lambda$1281/2116219866@2d288c47
+
+scala> 加一(2)
+res9: Int = 3
+```
+类似可以加二:
+```
+scala> val 加二 = 柯里求和(2)_
+加二: Int => Int = $$Lambda$1282/1859753031@7a977d23
+
+scala> 加二(2)
+res10: Int = 4
+```
+
+#### 9.4 编写新的控制结构
+
+
 ### 发现的中文相关问题
 命令行交互环境中, 错误信息对中文字符的定位不准. 这很干扰排错. 比较如下两个同样出错信息:
 ```

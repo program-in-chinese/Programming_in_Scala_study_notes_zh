@@ -2016,6 +2016,110 @@ res10: Int = 4
 ```
 
 #### 9.4 编写新的控制结构
+```
+scala> def 两遍(操作: Double => Double, 数: Double) = 操作(操作(数))
+两遍: (操作: Double => Double, 数: Double)Double
+
+scala> 两遍(_ + 1, 5)
+res11: Double = 7.0
+```
+之前的文件匹配, 也可以抽象出控制:
+```scala
+def 用打印写入器(文件: File, 操作: PrintWriter => Unit) = {
+  val 写入器 = new PrintWriter(文件)
+  try {
+    操作(写入器)
+  } finally {
+    写入器.close()
+  }
+}
+```
+可以这样用:
+```scala
+用打印写入器(
+  new File("数据.txt")
+  写入器 => 写入器.println(new java.util.Date)
+)
+```
+单参数可用大括号:
+```
+scala> println { "吃了么" }
+吃了么
+```
+下面报错:
+```
+scala> val 文本 = "吃了么"
+文本: String = 吃了么
+
+scala> 文本.substring { 0, 2 }
+<console>:1: error: ';' expected but ',' found.
+       文本.substring { 0, 2 }
+                       ^
+```
+如此可以:
+```
+scala> 文本.substring ( 0, 2 )
+res15: String = 吃了
+```
+为避免问题, 可用柯里:
+```scala
+def 用打印写入器(文件: File)(操作: PrintWriter => Unit) = {
+  val 写入器 = new PrintWriter(文件)
+  try {
+    操作(写入器)
+  } finally {
+    写入器.close()
+  }
+}
+```
+可如下调用:
+```scala
+val 文件 = new File("数据.txt")
+
+用打印写入器(文件) { 写入器 =>
+  写入器.println(new java.util.Date)
+}
+```
+
+#### 9.5 基于名称的参数
+```scala
+var 断言使能 = true
+
+def 我的断言(断言: () => Boolean) =
+  if (断言使能 && !断言())
+    throw new AssertionError
+```
+调用不便:
+```scala
+我的断言(() => 5 > 3)
+```
+下面定义:
+```scala
+def 按名称断言(断言: => Boolean) =
+  if (断言使能 && !断言)
+    throw new AssertionError
+
+按名称断言(5>3)
+```
+当然也可以直接用Boolean类型:
+```scala
+def 布尔断言(断言: Boolean) =
+  if (断言使能 && !断言)
+     throw new AssertionError
+```
+区别在于, `按名称断言`在调用之前不会获取`断言`的值, 比如下面的调用, 前者会异常, 后者不会:
+```
+scala> 断言使能 = false
+断言使能: Boolean = false
+
+scala> 布尔断言(5/0 == 0)
+java.lang.ArithmeticException: / by zero
+  ... 29 elided
+
+scala> 按名称断言(5/0 == 0)
+```
+
+(第九章完)
 
 
 ### 发现的中文相关问题

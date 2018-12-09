@@ -2121,6 +2121,67 @@ scala> 按名称断言(5/0 == 0)
 
 (第九章完)
 
+### 第十章 组合和继承
+
+组合意为, 一个类包含另一个类的引用
+
+#### 10.1 二维布局库
+elem--元素; Element--元素类
+```scala
+元素(文本: String): 元素类
+```
+可以如下调用:
+```scala
+val 列1 = 元素("你好啊") 在上 元素("!!!")
+val 列2 = 元素("~~~") 在上 元素("世界")
+列1 在旁 列2
+```
+期望输出:
+```
+你好啊 !!!
+~~~ 世界
+```
+
+#### 10.2 抽象类
+```scala
+abstract class 元素类 {
+  def 内容: Array[String]
+}
+```
+不能直接new:
+```
+scala> new 元素类
+<console>:13: error: class 元素类 is abstract; cannot be instantiated
+       new 元素类
+       ^
+```
+
+#### 10.3 定义无参数方法
+```scala
+abstract class 元素类 {
+  def 内容: Array[String]
+  def 高度: Int = 内容.length
+  def 宽度: Int = if (高度 == 0) 0 else 内容(0).length
+}
+```
+注意, 三个方法定义都没有(). 好处是使用库的客户代码不需在乎它是方法还是属性, 比如下面的库改动不会影响客户代码:
+```scala
+abstract class 元素类 {
+  def 内容: Array[String]
+  val 高度 = 内容.length
+  val 宽度 = if (高度 == 0) 0 else 内容(0).length
+}
+```
+调用无参数方法时, 可以省去括号:
+```scala
+Array(1, 2, 3).toString
+"abc".length   // 因为无副作用
+println()   // 最好不要省略(), 因为有副作用. 如果省略, 客户调用时会误以为没有副作用
+```
+
+#### 10.4 扩展类
+
+(待续)
 
 ### 发现的中文相关问题
 命令行交互环境中, 错误信息对中文字符的定位不准. 这很干扰排错. 比较如下两个同样出错信息:

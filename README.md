@@ -2181,7 +2181,69 @@ println()   // 最好不要省略(), 因为有副作用. 如果省略, 客户调
 
 #### 10.4 扩展类
 
-(待续)
+```scala
+class 数组元素(数组内容: Array[String]) extends 元素类 {
+  def 内容: Array[String] = 数组内容
+}
+```
+可以调用`宽度`:
+```
+scala> val 某组 = new 数组元素(Array("你好啊", "世界"))
+某组: 数组元素 = 数组元素@3b5a19ed
+
+scala> 某组.宽度
+res0: Int = 3
+```
+子类的实例也是父类的实例:
+```scala
+val 元素 = new 数组元素(Array("你好啊"))
+```
+
+#### 10.5 重写方法和域
+Scala允许用域代替方法:
+```scala
+class 数组元素(数组内容: Array[String]) extends 元素类 {
+  val 内容: Array[String] = 数组内容
+}
+```
+同时, 不允许域和方法同名. 下面会编译出错:
+```scala
+class 不能编译 {
+  private var 函数 = 0
+  def 函数 = 1
+}
+```
+
+#### 10.6 定义参数域
+之前的`数组内容`变量只是为了与`内容`不重名, 属于"有味的代码". 可以通过"类参数"避免:
+```scala
+class 数组元素(
+  val 内容: Array[String]
+) extends 元素类
+```
+`内容`会在初始化时由参数赋值, 效果如同下面:
+```scala
+class 数组元素(某名: Array[String]) extends 元素类 {
+  val 内容: Array[String] = 某名
+}
+```
+类参数可以定义var. 也可以添加private/protected/override:
+```scala
+class 猫 {
+  val 危险 = false
+}
+class 虎 (
+  override val 危险: Boolean,
+  private var 年龄: Int
+) extends 猫
+```
+"虎"的定义是下面的简写:
+```scala
+class 虎(参数1: Boolean, 参数2: Int) extends 猫 {
+  override val 危险 = 参数1,
+  private var 年龄 = 参数2
+}
+```
 
 ### 发现的中文相关问题
 命令行交互环境中, 错误信息对中文字符的定位不准. 这很干扰排错. 比较如下两个同样出错信息:

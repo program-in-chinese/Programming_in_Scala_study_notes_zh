@@ -2245,6 +2245,220 @@ class 虎(参数1: Boolean, 参数2: Int) extends 猫 {
 }
 ```
 
+#### 10.7 调用父类构造器
+```scala
+class 线元素(文本: String) extends 数组元素(Array(文本)) {
+  override def 宽度 = 文本.length
+  override def 高度 = 1
+}
+```
+
+#### 10.8 用`override`重写
+因为`高度`和`宽度`重写了`元素类`中的定义, 需要`override`. 如果有`override`但变量并未重写, 会编译报错:
+```
+$ scalac 线元素.scala 
+线元素.scala:13: error: method 高 overrides nothing
+  override def 高 = 1
+               ^
+one error found
+```
+如果父类要添加这个方法, 用来判断是否某个形状需要重画:
+```scala
+def 藏着(): Boolean
+```
+但客户的子类也许定义了同样方法, 但不同定义. 如果客户子类定义没有加`override`, 就会报错:
+**此处未复现!**
+```
+.../Shapes.scala:6: error: error overriding method
+    hidden in class Shape of type ()Boolean;  
+method hidden needs `override' modifier  
+def hidden(): Boolean =   
+^
+```
+
+#### 10.9 多态和动态绑定
+多态: 一个`元素类`的实例可以有多种类型, 如`数组元素`. 再定义一个新子类:
+```scala
+class 单一元素(
+  字: Char,
+  override val 宽度: Int,
+  override val 高度: Int
+) extends 元素类 {
+  private val 线 = 字.toString * 宽度
+  def 内容 = Array.fill(高度)(线)
+}
+```
+允许下面的定义:
+```scala
+val 元素1: 元素类 = new 数组元素(Array("你好啊", "世界"))
+val 组: 数组元素 = new 线元素("你好啊")
+val 元素2: 元素类 = 组
+val 元素3: 元素类 = new 单一元素('义', 2, 3)
+```
+动态绑定: 运行时的方法调用基于方法所在实例的类型, 而非变量或表达式的类型. 如:
+```scala
+abstract class 元素类 {
+  def 演示() = {
+    println("调用元素类实现")
+  }
+}
+
+class 数组元素 extends 元素类 {
+  override def 演示() = {
+    println("调用数组元素类实现")
+  }
+}
+
+class 线元素 extends 数组元素 {
+  override def 演示() = {
+    println("调用线元素类实现")
+  }
+}
+
+class 单一元素 extends 元素类
+
+def 调用演示(元素: 元素类) = {
+  元素.演示()
+}
+```
+运行结果如下:
+```
+scala> 调用演示(new 数组元素)
+调用数组元素类实现
+
+scala> 调用演示(new 线元素)
+调用线元素类实现
+
+scala> 调用演示(new 单一元素)
+调用元素类实现
+```
+
+#### 10.10 声明final成员
+如希望不能被子类重写:
+```scala
+class 数组元素 extends 元素类 {
+  final override def 演示() = {
+    println("调用数组元素类实现")
+  }
+}
+```
+如果线元素想重写`演示`方法, 编译出错:
+```
+<console>:13: error: overriding method 演示 in class 数组元素 of type ()Unit;
+ method 演示 cannot override final member
+         override def 演示() = {
+                      ^
+```
+如在class前加final, 则此类不能有子类
+
+#### 10.11 用组合和继承
+将`线元素`改为直接继承于`元素类`, 就与`Array`有组合关系: 它包含了一个Array的引用
+```scala
+class 线元素(文本: String) extends 元素类 {
+  val 内容 = Array(文本)
+  override def 宽度 = 文本.length
+  override def 高度 = 1
+}
+```
+
+#### 10.12 实现`在上`, `在旁`和`toString`
+
+**注: `toString`应该是转换字符串的默认函数名, 因此不中文化**
+```scala
+def 在上(另一: 元素类): 元素类 =
+  new 数组元素(this.内容 ++ 另一.内容)
+
+def 在旁(另一: 元素类): 元素类 = {
+  val 内容 = new Array[String](this.内容.length)
+  for (i <- 0 until this.内容.length)
+    内容(i) = this.内容(i) + 另一.内容(i)
+  new 数组元素(内容)
+}
+```
+`在旁`中的for循环可以避免用索引遍历:
+```scala
+new 数组元素(
+  for (
+    (行1, 行2) <- this.内容 zip 另一.内容
+  ) yield 行1 + 行2
+)
+```
+zip例子:
+```scala
+scala> Array(1, 2, 3) zip Array("a", "b")
+res3: Array[(Int, String)] = Array((1,a), (2,b))
+```
+定义toString:
+```scala
+override def toString = 内容 mkString "\n"
+```
+完整`元素类`如下:
+```scala
+abstract class 元素类 {
+  def 内容: Array[String]
+  
+  def 宽度: Int =
+    if (高度 == 0) 0 else 内容(0).length
+  
+  def 高度: Int = 内容.length
+  
+  def 在上(另一: 元素类): 元素类 =
+    new 数组元素(this.内容 ++ 另一.内容)
+  
+  def 在旁(另一: 元素类): 元素类 =
+    new 数组元素(
+      for (
+        (行1, 行2) <- this.内容 zip 另一.内容
+      ) yield 行1 + 行2
+    )
+  
+  override def toString = 内容 mkString "\n"
+}
+```
+
+#### 10.13 定义工厂对象
+一个直接的方法是将伴随对象, 作为工厂生成布局元素
+```scala
+object 元素 {
+  def 元素(内容: Array[String]): 元素类 =
+    new 数组元素(内容)
+  
+  def 元素(字: Char, 宽: Int, 高: Int): 元素类 =
+    new 单一元素(字, 宽, 高)
+  
+  def 元素(线: String): 元素类 =
+    new 线元素(线)
+}
+```
+导入工厂方法后的类定义:
+```scala
+import 元素类.元素
+
+abstract class 元素类 {
+  def 内容: Array[String]
+  
+  def 宽度: Int =
+    if (高度 == 0) 0 else 内容(0).length
+  
+  def 高度: Int = 内容.length
+  
+  def 在上(另一: 元素类): 元素类 =
+    元素(this.内容 ++ 另一.内容)
+  
+  def 在旁(另一: 元素类): 元素类 =
+    元素(
+      for (
+        (行1, 行2) <- this.内容 zip 另一.内容
+      ) yield 行1 + 行2
+    )
+  
+  override def toString = 内容 mkString "\n"
+}
+```
+更进一步, 已可以将`数组元素`等子类改为私有, 因为不需在客户代码中直接调用
+
+#### 10.14 
+
 ### 发现的中文相关问题
 命令行交互环境中, 错误信息对中文字符的定位不准. 这很干扰排错. 比较如下两个同样出错信息:
 ```

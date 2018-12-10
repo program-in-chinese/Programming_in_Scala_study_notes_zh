@@ -2419,7 +2419,7 @@ abstract class 元素类 {
 #### 10.13 定义工厂对象
 一个直接的方法是将伴随对象, 作为工厂生成布局元素
 ```scala
-object 元素 {
+object 元素类 {
   def 元素(内容: Array[String]): 元素类 =
     new 数组元素(内容)
   
@@ -2457,7 +2457,168 @@ abstract class 元素类 {
 ```
 更进一步, 已可以将`数组元素`等子类改为私有, 因为不需在客户代码中直接调用
 
-#### 10.14 
+#### 10.14 变高和变宽
+第二行更宽, 会有问题
+```scala
+new 数组类型(Array("你好")) 在上
+new 数组类型(Array("世界!"))
+```
+类似的, 高度不同也有问题:
+```scala
+new 数组类型(Array("一", "二")) 在旁
+new 数组类型(Array("一"))
+```
+因此添加方法`变宽`使元素的宽度能够容纳所有内容, 并且内容居中, 两边填充空格; `变高`类似:
+```scala
+object 元素类 {
+  private class 数组元素(
+              val 内容: Array[String]
+            ) extends 元素类
+
+  private class 线元素(文本: String) extends 元素类 {
+    val 内容 = Array(文本)
+    override def 宽度 = 文本.length
+    override def 高度 = 1
+  }
+
+  private class 单一元素(
+              字: Char,
+              override val 宽度: Int,
+              override val 高度: Int
+            ) extends 元素类 {
+    private val 线 = 字.toString * 宽度
+    def 内容 = Array.fill(高度)(线)
+  }
+
+  def 元素(内容: Array[String]): 元素类 =
+    new 数组元素(内容)
+
+  def 元素(字: Char, 宽: Int, 高: Int): 元素类 =
+    new 单一元素(字, 宽, 高)
+
+  def 元素(线: String): 元素类 =
+    new 线元素(线)
+}
+
+import 元素类.元素
+
+abstract class 元素类 {
+  def 内容: Array[String]
+
+  def 宽度: Int = 内容(0).length
+  def 高度: Int = 内容.length
+
+  def 在上(另一: 元素类): 元素类 = {
+    val 这个 = this 变宽 另一.宽度
+    val 另一个 = 另一 变宽 this.宽度
+    元素(这个.内容 ++ 另一个.内容)
+  }
+
+  def 在旁(另一: 元素类): 元素类 = {
+    val 这个 = this 变高 另一.高度
+    val 另一个 = 另一 变高 this.高度
+    元素(
+      // 报编译错误: error: not found: value 行1. 需深究!
+      //for ((行1, 行2) <- 这个.内容 zip 另一个.内容)
+      //  yield 行1 + 行2)
+      for ((line1, line2) <- 这个.内容 zip 另一个.内容)
+        yield line1 + line2)
+  }
+
+  def 变宽(宽: Int): 元素类 =
+    if (宽 <= 宽度) this
+    else {
+      val 左 = 元素(' ', (宽 - 宽度) / 2, 高度)
+      val 右 = 元素(' ', 宽 - 宽度 - 左.宽度, 高度)
+      左 在旁 this 在旁 右
+    }
+
+  def 变高(高: Int): 元素类 =
+    if (高 <= 高度) this
+    else {
+      val 上 = 元素(' ', 宽度, (高 - 高度) / 2)
+      val 下 = 元素(' ', 宽度, 高 - 高度 - 上.高度)
+      上 在上 this 在上 下
+    }
+
+  override def toString = 内容 mkString "\n"
+}
+```
+
+#### 10.15 汇总
+```scala
+import 元素类.元素
+
+object 螺旋 {
+  val 空格 = 元素(" ")
+  val 角 = 元素("+")
+
+  def 螺旋(边数: Int, 方向: Int): 元素类 = {
+    if (边数 == 1)
+      元素("+")
+    else {
+      val 旋 = 螺旋(边数 - 1, (方向 + 3) % 4)
+      def 竖条 = 元素('|', 1, 旋.高度)
+      def 横条 = 元素('-', 旋.宽度, 1)
+      if (方向 == 0)
+        (角 在旁 横条) 在上 (旋 在旁 空格)
+      else if (方向 == 1)
+        (旋 在上 空格) 在旁 (角 在上 竖条)
+      else if (方向 == 2)
+        (空格 在旁 旋) 在上 (横条 在旁 角)
+      else
+        (竖条 在上 角) 在旁 (空格 在上 旋)
+    }
+  }
+
+  def main(参数: Array[String]) = {
+    val 边数 = 参数(0).toInt
+    println(螺旋(边数, 0))
+  }
+}
+```
+运行:
+```
+$ scala 螺旋 6
++-----
+|     
+| +-+ 
+| + | 
+|   | 
++---+ 
+$ scala 螺旋 11
++----------
+|          
+| +------+ 
+| |      | 
+| | +--+ | 
+| | |  | | 
+| | ++ | | 
+| |    | | 
+| +----+ | 
+|        | 
++--------+ 
+$ scala 螺旋 17
++----------------
+|                
+| +------------+ 
+| |            | 
+| | +--------+ | 
+| | |        | | 
+| | | +----+ | | 
+| | | |    | | | 
+| | | | ++ | | | 
+| | | |  | | | | 
+| | | +--+ | | | 
+| | |      | | | 
+| | +------+ | | 
+| |          | | 
+| +----------+ | 
+|              | 
++--------------+ 
+```
+
+(第十章完)
 
 ### 发现的中文相关问题
 命令行交互环境中, 错误信息对中文字符的定位不准. 这很干扰排错. 比较如下两个同样出错信息:

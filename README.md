@@ -2621,6 +2621,31 @@ $ scala 螺旋 17
 (第十章完)
 
 ### 发现的中文相关问题
+
+#### 命名问题
+10.14 中, 可复现问题如下, 需要深究:
+```
+scala> for ((行1, 行2) <- Array(1,2) zip Array("a", "b"))
+     | yield 行1 + 行2
+<console>:12: error: not found: value 行1
+       for ((行1, 行2) <- Array(1,2) zip Array("a", "b"))
+             ^
+<console>:12: error: not found: value 行2
+       for ((行1, 行2) <- Array(1,2) zip Array("a", "b"))
+                 ^
+<console>:13: error: not found: value 行1
+       yield 行1 + 行2
+             ^
+<console>:13: error: not found: value 行2
+       yield 行1 + 行2
+                  ^
+
+scala> for ((l1, l2) <- Array(1,2) zip Array("a", "b"))
+     | yield l1 + l2
+res1: Array[String] = Array(1a, 2b)
+```
+
+#### 环境问题
 命令行交互环境中, 错误信息对中文字符的定位不准. 这很干扰排错. 比较如下两个同样出错信息:
 ```
 scala> println(["2"])
